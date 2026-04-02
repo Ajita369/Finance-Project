@@ -1,0 +1,123 @@
+// ============================================================
+// Finance Data Processing and Access Control Backend
+// Prisma Schema — SQLite
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ─────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────
+
+enum Role {
+  VIEWER
+  ANALYST
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum RecordType {
+  INCOME
+  EXPENSE
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+}
+
+// ─────────────────────────────────────────────
+// User
+// ─────────────────────────────────────────────
+
+model User {
+  id        String     @id @default(cuid())
+  name      String
+  email     String     @unique
+  password  String
+  role      Role       @default(VIEWER)
+  status    UserStatus @default(ACTIVE)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  // Relations
+  createdRecords Record[]   @relation("RecordCreatedBy")
+  updatedRecords Record[]   @relation("RecordUpdatedBy")
+  auditLogs      AuditLog[]
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────
+// Record
+// ─────────────────────────────────────────────
+
+model Record {
+  id          String     @id @default(cuid())
+  amount      Float
+  type        RecordType
+  category    String
+  date        DateTime
+  notes       String?
+  isDeleted   Boolean    @default(false)
+  deletedAt   DateTime?
+
+  // Foreign keys
+  createdById String
+  updatedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  createdBy User  @relation("RecordCreatedBy", fields: [createdById], references: [id])
+  updatedBy User? @relation("RecordUpdatedBy", fields: [updatedById], references: [id])
+
+  @@index([type])
+  @@index([category])
+  @@index([date])
+  @@index([isDeleted])
+  @@index([createdById])
+  @@index([type, category])
+  @@index([isDeleted, date])
+  @@map("records")
+}
+
+// ─────────────────────────────────────────────
+// AuditLog
+// ─────────────────────────────────────────────
+
+model AuditLog {
+  id           String      @id @default(cuid())
+  action       AuditAction
+  entityType   String
+  entityId     String
+  metadata     String?     // JSON string stored as text in SQLite
+  performedById String
+  createdAt    DateTime    @default(now())
+
+  // Relations
+  performedBy User @relation(fields: [performedById], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([performedById])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
