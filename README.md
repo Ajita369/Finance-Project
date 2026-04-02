@@ -224,6 +224,8 @@ Default credentials:
 
 - `npm run dev`
 - `npm run build`
+- `npm run test`
+- `npm run test:watch`
 - `npm run db:generate`
 - `npm run db:push`
 - `npm run db:migrate`
@@ -235,6 +237,12 @@ Default credentials:
 
 ```bash
 npm run build
+```
+
+- Focused behavior tests:
+
+```bash
+npm run test
 ```
 
 - Seed reliability check:
